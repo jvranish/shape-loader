@@ -54,6 +54,21 @@ class Loader < Struct.new(:pos,
   attr_accessor :shape
   def step(dt, world)
     self.pos += (vel * dt)
+    if self.pos.x < 0.0 
+      self.pos = Vector2d.new(0.0, self.pos.y)
+    end
+
+    if self.pos.y < 0.0 
+      self.pos = Vector2d.new(self.pos.x, 0.0)
+    end
+
+    if self.pos.x > 13.0
+      self.pos = Vector2d.new(13.0, self.pos.y)
+    end
+
+    if self.pos.y > 13.0 
+      self.pos = Vector2d.new(self.pos.x, 13.0)
+    end
 
     if !nearby_shape.nil?
       desired_bucket_offset = nearby_shape.pos - Vector2d.new(-0.32, 0.32) - self.pos
@@ -64,7 +79,7 @@ class Loader < Struct.new(:pos,
     end
 
     offset_error = desired_bucket_offset - bucket_offset
-    bucket_speed = 2.0
+    bucket_speed = 5.0
 
     if offset_error != ZERO_VECTOR
       bucket_vel = offset_error.normalize * (bucket_speed * dt)
@@ -167,7 +182,7 @@ class World < Struct.new(:loader,
       end
     end
 
-    if !loader.shape.nil? && manhattan_distance(truck.pos + (RIGHT*2.0) + (truck.shapes_needed.length * LEFT), loader.pos) <= 0.6
+    if !loader.shape.nil? && manhattan_distance(truck.pos + (RIGHT*1.7) + (truck.shapes_needed.length * LEFT), loader.pos) <= 0.5
       loader.nearby_needed_shape = truck.pos + RIGHT + (truck.shapes_needed.length * LEFT)
       # truck.shapes_loaded << loader.shape
       # loader.shape = nil
@@ -234,7 +249,7 @@ class Game < Gosu::Window
   def update
     commanded_directions = DIRECTIONS.select{ |key, value| self.button_down? key }.values
     player_vel = commanded_directions.inject(ZERO_VECTOR) { |sum, x| sum + x }
-    @world.update(player_vel * 3.0, @desired_bucket_offset)
+    @world.update(player_vel * 2.0, @desired_bucket_offset)
     @world.step(@frame_time.dt)
 
     # todo ignore sending events with the same velocity
