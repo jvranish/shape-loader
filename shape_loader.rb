@@ -253,7 +253,7 @@ class Game < Gosu::Window
 
     if not loader.shape.nil?
       pos = bucket_offset + loader.pos
-      images[loader.shape].draw(pos.x * 32, pos.y * 32, 1)
+      images[loader.shape].draw(pos.x * 32, pos.y * 32, 3)
     end
 
     pos = loader.bucket_offset + loader.pos
