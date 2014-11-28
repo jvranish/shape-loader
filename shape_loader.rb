@@ -48,14 +48,46 @@ end
 class Loader < Struct.new(:pos,
                           :vel,
                           :bucket_offset,
-                          :desired_bucket_offset,
+                          :nearby_shape,
+                          :nearby_needed_shape,
                           :shape)
   attr_accessor :shape
-  def step(dt)
+  def step(dt, world)
     self.pos += (vel * dt)
+
+    if !nearby_shape.nil?
+      desired_bucket_offset = nearby_shape.pos - Vector2d.new(-0.32, 0.32) - self.pos
+    elsif !nearby_needed_shape.nil?
+      desired_bucket_offset = nearby_needed_shape - Vector2d.new(-0.32, 0.32) - self.pos
+    else
+      desired_bucket_offset = ZERO_VECTOR
+    end
+
     offset_error = desired_bucket_offset - bucket_offset
+    bucket_speed = 2.0
+
     if offset_error != ZERO_VECTOR
-      self.bucket_offset += offset_error.normalize * 0.1
+      bucket_vel = offset_error.normalize * (bucket_speed * dt)
+      if bucket_offset.distance(desired_bucket_offset) < bucket_vel.length
+        self.bucket_offset = desired_bucket_offset
+      else
+        self.bucket_offset += bucket_vel
+      end
+    else
+      if !nearby_shape.nil?
+        self.shape = nearby_shape.type
+        world.shapes.delete(nearby_shape)
+        nearby_shape = nil
+      end
+      if !nearby_needed_shape.nil?
+        world.truck.shapes_loaded << self.shape
+        self.shape = nil
+        world.truck.shapes_needed.shift
+
+        if world.truck.shapes_needed.empty?
+          world.truck.vel = Vector2d.new(-1.0, 0.0)
+        end
+      end
     end
   end
 end
@@ -106,7 +138,8 @@ class World < Struct.new(:loader,
     super(Loader.new(Vector2d.new(10.0, 10.0),
                      ZERO_VECTOR,
                      ZERO_VECTOR,
-                     ZERO_VECTOR,
+                     nil,
+                     nil,
                      nil),
           Truck.new(Vector2d.new(6.0, 13.0),
                     ZERO_VECTOR,
@@ -125,29 +158,31 @@ class World < Struct.new(:loader,
 
   def update(vel, desired_bucket_offset)
     loader.vel = vel
-    loader.desired_bucket_offset = desired_bucket_offset
+    loader.nearby_shape = nil
     shapes.each_with_index do |shape, i|
-
-      if loader.shape.nil? && manhattan_distance(shape.pos + RIGHT, loader.pos) <= 1.0 &&
+      if loader.shape.nil? && manhattan_distance(shape.pos + (RIGHT*0.6), loader.pos) <= 0.6 &&
           truck.shapes_needed.first == SHAPES_NEEDED[shape.type]
-        loader.shape = shape.type
-        shapes.delete_at(i)
+        loader.nearby_shape = shape
         break
       end
     end
-    if !loader.shape.nil? && manhattan_distance(truck.pos + RIGHT + (truck.shapes_needed.length * LEFT), loader.pos) <= 1.0
-      truck.shapes_loaded << loader.shape
-      loader.shape = nil
-      truck.shapes_needed.shift
 
-      if truck.shapes_needed.empty?
-        truck.vel = Vector2d.new(-1.0, 0.0)
-      end
+    if !loader.shape.nil? && manhattan_distance(truck.pos + (RIGHT*2.0) + (truck.shapes_needed.length * LEFT), loader.pos) <= 0.6
+      loader.nearby_needed_shape = truck.pos + RIGHT + (truck.shapes_needed.length * LEFT)
+      # truck.shapes_loaded << loader.shape
+      # loader.shape = nil
+      # truck.shapes_needed.shift
+
+      # if truck.shapes_needed.empty?
+      #   truck.vel = Vector2d.new(-1.0, 0.0)
+      # end
+    else
+      loader.nearby_needed_shape = nil
     end
   end
 
   def step(dt)
-    loader.step(dt)
+    loader.step(dt, self)
     truck.step(dt)
   end
 end
@@ -199,7 +234,7 @@ class Game < Gosu::Window
   def update
     commanded_directions = DIRECTIONS.select{ |key, value| self.button_down? key }.values
     player_vel = commanded_directions.inject(ZERO_VECTOR) { |sum, x| sum + x }
-    @world.update(player_vel * 8.0, @desired_bucket_offset)
+    @world.update(player_vel * 3.0, @desired_bucket_offset)
     @world.step(@frame_time.dt)
 
     # todo ignore sending events with the same velocity
@@ -214,14 +249,16 @@ class Game < Gosu::Window
   end
 
   def draw_bucket(loader)
+    bucket_offset = Vector2d.new(-0.32, 0.32) + loader.bucket_offset
+
     if not loader.shape.nil?
-      bucket_offset = Vector2d.new(-0.32, 0.32) + loader.bucket_offset
       pos = bucket_offset + loader.pos
       images[loader.shape].draw(pos.x * 32, pos.y * 32, 1)
-      pos = loader.bucket_offset + loader.pos
-      images[:loader_arm].draw(pos.x * 32, pos.y * 32, 3)
-      images[:loader_scoop].draw(pos.x * 32, pos.y * 32, 3)
     end
+
+    pos = loader.bucket_offset + loader.pos
+    images[:loader_arm].draw(pos.x * 32, loader.pos.y * 32, 3)
+    images[:loader_scoop].draw(pos.x * 32, pos.y * 32, 3)
   end
 
   def draw_shape(shape)
@@ -265,11 +302,11 @@ class Game < Gosu::Window
 
   def button_down(id)
     if id == Gosu::KbSpace then
-      if @desired_bucket_offset != Vector2d.new(-0.3, -0.3)
-        @desired_bucket_offset = Vector2d.new(-0.3, -0.3)
-      else
-        @desired_bucket_offset = Vector2d.new(0.0, 0.0)
-      end
+      # if @desired_bucket_offset != Vector2d.new(-0.3, -0.3)
+      #   @desired_bucket_offset = Vector2d.new(-0.3, -0.3)
+      # else
+      #   @desired_bucket_offset = Vector2d.new(0.0, 0.0)
+      # end
 
 
       
