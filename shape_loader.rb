@@ -62,8 +62,8 @@ class Loader < Struct.new(:pos,
       self.pos = Vector2d.new(self.pos.x, 0.0)
     end
 
-    if self.pos.x > 13.0
-      self.pos = Vector2d.new(13.0, self.pos.y)
+    if self.pos.x > 14.0
+      self.pos = Vector2d.new(14.0, self.pos.y)
     end
 
     if self.pos.y > 13.0 
