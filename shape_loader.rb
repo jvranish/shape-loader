@@ -88,7 +88,10 @@ class Loader < Struct.new(:pos,
       else
         self.bucket_offset += bucket_vel
       end
-    else
+    end
+
+    offset_error = desired_bucket_offset - bucket_offset
+    if offset_error == ZERO_VECTOR
       if !nearby_shape.nil?
         self.shape = nearby_shape.type
         world.shapes.delete(nearby_shape)
@@ -103,6 +106,10 @@ class Loader < Struct.new(:pos,
           world.truck.vel = Vector2d.new(-1.0, 0.0)
         end
       end
+    end
+    if world.truck.shapes_needed.empty?
+      world.truck.vel = Vector2d.new(-1.0, 0.0)
+      self.pos = world.truck.pos + (LEFT * 1.5) + (UP * 0.7)
     end
   end
 end
