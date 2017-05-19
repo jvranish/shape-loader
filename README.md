@@ -11,6 +11,7 @@ A simple game for kids where you load shapes onto a truck
 
 - Use arrow keys to move.
 - The goal is to pick up the right shapes and load them on the truck. The order matters.
+- press `ESC` to quit.
 
 ## Have fun!
 
