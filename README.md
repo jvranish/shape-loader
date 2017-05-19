@@ -14,5 +14,5 @@ A simple game for kids where you load shapes onto a truck
 
 ## Have fun!
 
-
+![Screenshot of shape-loader](https://raw.githubusercontent.com/jvranish/shape-loader/master/gfx/screenshot.png)
 
