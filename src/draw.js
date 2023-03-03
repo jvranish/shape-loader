@@ -73,6 +73,7 @@ function drawTruck(time, ctx, images, truck) {
   const nextNeededShape = truck.nextNeededShape();
   if (nextNeededShape !== null) {
     const shapePos = truckPos.add(RIGHT.multiply(1 + shapesLoaded.length));
+    // draw the shape needed with a pulsing alpha
     ctx.globalAlpha = 0.75 + 0.25 * Math.sin(time / 100);
     ctx.drawImage(
       images[neededFromShape(nextNeededShape)],
@@ -120,7 +121,7 @@ function drawLoadableShapes(ctx, images, loadableShapes) {
 }
 
 /**
- * Draw the floor.
+ * Draw the ground.
  * @param {CanvasRenderingContext2D} ctx
  * @param {Images} images
  */

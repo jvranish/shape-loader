@@ -1,3 +1,9 @@
+/**
+ * A simple 2D vector, with an x and y coordinate, and some basic operations
+ *
+ * @export
+ * @class Vector2d
+ */
 export class Vector2d {
   /**
    * @param {number} x
@@ -39,6 +45,9 @@ export class Vector2d {
   }
 
   normalize() {
+    if (this.isZero()) {
+      return new Vector2d(0.0, 0.0);
+    }
     return this.divide(this.length());
   }
 

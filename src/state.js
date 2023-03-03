@@ -1,5 +1,4 @@
-
-import { Vector2d  } from "./vector2d.js";
+import { Vector2d } from "./vector2d.js";
 import { Loader } from "./loader.js";
 import { Truck } from "./truck.js";
 import { LoadableShape, SHAPES, randomShape } from "./shapes.js";
@@ -50,6 +49,9 @@ export class State {
 
     /** @type {LoadableShape[]} */
     const shapes = [];
+
+    // Add 4 shapes of each type (makes sure we always have enough shapes to
+    // fully load the truck with only a single shape type)
     for (let i = 0; i < 4; i++) {
       for (const shape of SHAPES) {
         const pos = positions.shift();
@@ -67,16 +69,22 @@ export class State {
     this.#loader.move(vel);
   }
 
+  getLoaderCenter() {
+    return this.#loader.getDrawPos().add(new Vector2d(1.0, 1.0));
+  }
+
   #checkLoadUnload() {
     const nextNeededShape = this.#truck.nextNeededShape();
     if (!nextNeededShape) {
+      // If we don't need any more shapes, drive off screen
       if (this.#truck.driveOffScreen() === "done") {
-        return true
+        return true;
       }
       return false;
     }
     const loadedShape = this.#loader.getLoadedShape();
     if (!loadedShape) {
+      // If we don't have a shape loaded, try to load one
       for (const i in this.#loadableShapes) {
         const loadableShape = this.#loadableShapes[i];
         if (nextNeededShape === loadableShape.shape) {
@@ -84,12 +92,14 @@ export class State {
           if (loadingState === "moving") {
             break;
           } else if (loadingState === "loaded") {
+            // Remove the shape from the list of loadable shapes
             this.#loadableShapes.splice(Number(i), 1);
             break;
           }
         }
       }
     } else {
+      // If we have a shape loaded, try to unload it
       const unloadingState = this.#loader.tryUnloading(this.#truck.unloadPos());
       if (unloadingState === "unloaded") {
         this.#truck.loadShape(loadedShape);
@@ -98,11 +108,15 @@ export class State {
     return false;
   }
 
-  /** @param {number} time */
+  /**
+   * Calculates the time difference between the last frame and the current frame
+   * @param {number} time
+   * @returns {number} The time difference in seconds
+   */
   #calculateDt(time) {
-      const dt = (time - this.#lastTime) / 1000;
-      this.#lastTime = time;
-      return dt;
+    const dt = (time - this.#lastTime) / 1000;
+    this.#lastTime = time;
+    return dt;
   }
 
   getDrawables() {

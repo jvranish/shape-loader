@@ -45,6 +45,9 @@ export class Truck {
     return this.#pos.add(LEFT.multiply(4))
   }
 
+  /**
+   * This is the position where the loader should unload the next shape.
+   */
   unloadPos() {
     return this.#pos
       .add(RIGHT.multiply(1))
