@@ -15,53 +15,64 @@ function shuffle(array) {
   }
 }
 
+const numberOfShapesNeeded = 4;
+
 export class State {
   #truck;
   #loadableShapes;
   #lastTime;
   #loader;
+  #boardSize;
   constructor() {
-    const shapesNeeded = [
-      randomShape(),
-      randomShape(),
-      randomShape(),
-      randomShape(),
-    ];
-    this.#truck = new Truck(
-      new Vector2d(6.0, 13.0),
-      new Vector2d(0, 0),
-      shapesNeeded,
-      []
-    );
-    this.#loadableShapes = State.initialShapes();
-    this.#lastTime = performance.now();
-    this.#loader = new Loader(new Vector2d(10, 13), new Vector2d(0, 0));
-  }
+    this.#boardSize = new Vector2d(15, 15);
 
-  static initialShapes() {
+    // No shapes on the top and left, and right edges, and no shapes on the bottom 3 rows
+    const shapeAreaTopLeft = new Vector2d(1, 1);
+    const shapeArea = this.#boardSize.subtract(new Vector2d(1, 3));
+    // No shapes immediately next to each other
+    const incBy = new Vector2d(2, 2);
+    /** @type {Vector2d[]} */
     const positions = [];
-    for (let x = 1; x <= 13; x += 2) {
-      for (let y = 1; y <= 11; y += 2) {
-        positions.push(new Vector2d(x, y));
-      }
-    }
+    shapeArea.eachGrid(
+      (pos) => {
+        positions.push(pos);
+      },
+      shapeAreaTopLeft,
+      incBy
+    );
     shuffle(positions);
 
     /** @type {LoadableShape[]} */
-    const shapes = [];
+    const loadableShapes = [];
 
     // Add 4 shapes of each type (makes sure we always have enough shapes to
     // fully load the truck with only a single shape type)
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < numberOfShapesNeeded; i++) {
       for (const shape of SHAPES) {
         const pos = positions.shift();
         if (!pos) {
           throw new Error("positions is empty");
         }
-        shapes.push({ pos, shape });
+        loadableShapes.push({ pos, shape });
       }
     }
-    return shapes;
+
+    // 4 random shapes needed
+    const shapesNeeded = new Array(numberOfShapesNeeded)
+      .fill(null)
+      .map(() => randomShape());
+
+    // put the truck one row from the bottom, and one column from the left
+    const truckPosition = new Vector2d(1, this.#boardSize.y - 2);
+    const loaderPosition = new Vector2d(
+      this.#boardSize.x - 5,
+      this.#boardSize.y - 2
+    );
+
+    this.#truck = new Truck(truckPosition, shapesNeeded);
+    this.#loadableShapes = loadableShapes;
+    this.#lastTime = performance.now();
+    this.#loader = new Loader(loaderPosition);
   }
 
   /** @param {Vector2d} vel */
@@ -124,6 +135,7 @@ export class State {
       truck: this.#truck,
       loader: this.#loader,
       loadableShapes: this.#loadableShapes,
+      boardSize: this.#boardSize,
     };
   }
 
@@ -131,7 +143,7 @@ export class State {
   update(time) {
     const dt = this.#calculateDt(time);
     this.#truck.step(dt);
-    this.#loader.step(dt);
+    this.#loader.step(dt, this.#boardSize);
     return this.#checkLoadUnload();
   }
 }

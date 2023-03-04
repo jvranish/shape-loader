@@ -11,11 +11,10 @@ export class Loader {
   #bucketSpeed;
   /**
    * @param {Vector2d} pos
-   * @param {Vector2d} vel
    */
-  constructor(pos, vel) {
+  constructor(pos) {
     this.#pos = pos;
-    this.#vel = vel;
+    this.#vel = Vector2d.zero();
     this.#bucketOffset = Vector2d.zero();
     this.#targetBucketOffset = Vector2d.zero();
     this.#loadedShape = /** @type {Shape | null} */ (null);
@@ -35,6 +34,10 @@ export class Loader {
     return this.#pos.add(this.#bucketOffset);
   }
 
+  getBucketArmOffset() {
+    return new Vector2d(-0.32, 0.32);
+  }
+
   /**
    * Returns true if the given position is within the bucket's reach.
    * @param {Vector2d} pos
@@ -48,7 +51,7 @@ export class Loader {
         return true;
       }
       this.#targetBucketOffset = pos
-        .subtract(new Vector2d(-0.32, 0.32))
+        .subtract(this.getBucketArmOffset())
         .subtract(this.#pos);
       return true;
     }
@@ -127,26 +130,17 @@ export class Loader {
 
   /**
    * @param {number} dt
+   * @param {Vector2d} boardSize
    */
-  step(dt) {
+  step(dt, boardSize) {
     this.#stepBucket(dt);
     this.#pos = this.#pos.add(this.#vel.multiply(dt));
 
+    // The loader is roughly 2x2, so don't let it go off the bottom of the
+    // screen but we let it go partially off the right side of the screen so it
+    // can pick up shapes near the edge
+    const loaderBounds = boardSize.subtract(new Vector2d(1, 2));
     // Prevent the loader from leaving the screen
-    if (this.#pos.x < 0.0) {
-      this.#pos = new Vector2d(0.0, this.#pos.y);
-    }
-
-    if (this.#pos.y < 0.0) {
-      this.#pos = new Vector2d(this.#pos.x, 0.0);
-    }
-
-    if (this.#pos.x > 14.0) {
-      this.#pos = new Vector2d(14.0, this.#pos.y);
-    }
-
-    if (this.#pos.y > 13.0) {
-      this.#pos = new Vector2d(this.#pos.x, 13.0);
-    }
+    this.#pos = this.#pos.clamp(Vector2d.zero(), loaderBounds);
   }
 }

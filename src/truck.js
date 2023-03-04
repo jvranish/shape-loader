@@ -1,6 +1,8 @@
 import { Vector2d, RIGHT, LEFT } from "./vector2d.js";
 /** @typedef {import("./shapes.js").Shape} Shape */
 
+const TRUCK_WIDTH = 5;
+
 export class Truck {
   #pos;
   #vel;
@@ -8,20 +10,18 @@ export class Truck {
   #shapesLoaded;
   /**
    * @param {Vector2d} pos
-   * @param {Vector2d} vel
    * @param {Shape[]} shapesNeeded
-   * @param {Shape[]} shapesLoaded
    */
-  constructor(pos, vel, shapesNeeded, shapesLoaded) {
+  constructor(pos, shapesNeeded) {
     this.#pos = pos;
-    this.#vel = vel;
+    this.#vel = new Vector2d(0, 0);
     this.#shapesNeeded = shapesNeeded;
-    this.#shapesLoaded = shapesLoaded;
+    this.#shapesLoaded = /** @type {Shape[]} */ ([]);
   }
 
   /** @return {Shape | null} */
   nextNeededShape() {
-    return this.#shapesNeeded[0] || null;
+    return this.#shapesNeeded[0] ?? null;
   }
 
   getShapesLoaded() {
@@ -34,7 +34,7 @@ export class Truck {
 
   driveOffScreen() {
       this.#vel = LEFT;
-      if (this.#pos.x < -1) {
+      if (this.#pos.x < -TRUCK_WIDTH) {
         return "done";
       } else {
         return "driving";
@@ -42,7 +42,7 @@ export class Truck {
   }
 
   drawPos() {
-    return this.#pos.add(LEFT.multiply(4))
+    return this.#pos;
   }
 
   /**
@@ -51,7 +51,7 @@ export class Truck {
   unloadPos() {
     return this.#pos
       .add(RIGHT.multiply(1))
-      .add(LEFT.multiply(this.#shapesNeeded.length));
+      .add(RIGHT.multiply(this.#shapesLoaded.length));
   }
 
   /** @param {Shape} shape */

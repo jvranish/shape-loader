@@ -69,6 +69,32 @@ export class Vector2d {
   equals(other) {
     return this.x === other.x && this.y === other.y;
   }
+
+  /**
+   * @param {Vector2d} min
+   * @param {Vector2d} max
+   */
+  clamp(min, max) {
+    return new Vector2d(
+      Math.min(Math.max(this.x, min.x), max.x),
+      Math.min(Math.max(this.y, min.y), max.y)
+    );
+  }
+
+  /**
+   * Calls the given function for each grid position in the given rectangle
+   * (assumes the top left corner is (0, 0)
+   * @param {(pos: Vector2d) => void} f
+   * @param {Vector2d} [topLeft]
+   * @param {Vector2d} [incBy]
+   */
+  eachGrid(f, topLeft = Vector2d.zero(), incBy = new Vector2d(1, 1)) {
+    for (let x = topLeft.x; x < this.x; x += incBy.x) {
+      for (let y = topLeft.y; y < this.y; y += incBy.y) {
+        f(new Vector2d(x, y));
+      }
+    }
+  }
 }
 
 export const LEFT = new Vector2d(-1.0, 0.0);

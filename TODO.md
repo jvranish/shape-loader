@@ -1,5 +1,5 @@
 TODO
 
-- [ ] Be more explicit about coordinate systems (Clean up many of the constants)
+- [ ] make bucket target an actual state machine
 - [ ] Add sound effects!
 

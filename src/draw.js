@@ -6,6 +6,8 @@ import { LoadableShape } from "./shapes.js";
 
 /** @typedef {import("./shapes.js").Shape} Shape */
 
+const TILE_SIZE = 32;
+
 /** @param {string} id */
 function getImageElement(id) {
   const img = document.getElementById(id);
@@ -54,6 +56,15 @@ function neededFromShape(shape) {
 }
 
 /**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {HTMLImageElement} image
+ * @param {Vector2d} pos
+ */
+function drawImage(ctx, image, pos) {
+  ctx.drawImage(image, pos.x * TILE_SIZE, pos.y * TILE_SIZE);
+}
+
+/**
  * @param {number} time
  * @param {CanvasRenderingContext2D} ctx
  * @param {Images} images
@@ -61,13 +72,13 @@ function neededFromShape(shape) {
  */
 function drawTruck(time, ctx, images, truck) {
   const truckPos = truck.drawPos();
-  ctx.drawImage(images.truck, truckPos.x * 32, truckPos.y * 32);
+  drawImage(ctx, images.truck, truckPos);
 
   const shapesLoaded = truck.getShapesLoaded();
 
   shapesLoaded.forEach((shape, i) => {
     const shapePos = truckPos.add(RIGHT.multiply(1 + i));
-      ctx.drawImage(images[shape], shapePos.x * 32, shapePos.y * 32);
+    drawImage(ctx, images[shape], shapePos);
   });
 
   const nextNeededShape = truck.nextNeededShape();
@@ -75,11 +86,7 @@ function drawTruck(time, ctx, images, truck) {
     const shapePos = truckPos.add(RIGHT.multiply(1 + shapesLoaded.length));
     // draw the shape needed with a pulsing alpha
     ctx.globalAlpha = 0.75 + 0.25 * Math.sin(time / 100);
-    ctx.drawImage(
-      images[neededFromShape(nextNeededShape)],
-      shapePos.x * 32,
-      shapePos.y * 32
-    );
+    drawImage(ctx, images[neededFromShape(nextNeededShape)], shapePos);
     ctx.globalAlpha = 1.0;
   }
 }
@@ -92,19 +99,19 @@ function drawTruck(time, ctx, images, truck) {
 function drawLoader(ctx, images, loader) {
   const loaderPos = loader.getDrawPos();
   // draw loader
-  ctx.drawImage(images.loader, loaderPos.x * 32, loaderPos.y * 32);
+  drawImage(ctx, images.loader, loaderPos);
   const bucketPos = loader.getBucketDrawPos();
 
   const loadedShape = loader.getLoadedShape();
   if (loadedShape !== null) {
-    const shapePos = bucketPos.add(new Vector2d(-0.32, 0.32));
+    const shapePos = bucketPos.add(loader.getBucketArmOffset());
     // draw shape in bucket
-    ctx.drawImage(images[loadedShape], shapePos.x * 32, shapePos.y * 32);
+    drawImage(ctx, images[loadedShape], shapePos);
   }
 
   // draw bucket
-  ctx.drawImage(images.loaderArm, bucketPos.x * 32, loaderPos.y * 32);
-  ctx.drawImage(images.loaderScoop, bucketPos.x * 32, bucketPos.y * 32);
+  drawImage(ctx, images.loaderArm, bucketPos);
+  drawImage(ctx, images.loaderScoop, bucketPos);
 }
 
 /**
@@ -115,8 +122,7 @@ function drawLoader(ctx, images, loader) {
  */
 function drawLoadableShapes(ctx, images, loadableShapes) {
   for (const loadableShape of loadableShapes) {
-    const { x, y } = loadableShape.pos;
-    ctx.drawImage(images[loadableShape.shape], x * 32, y * 32);
+    drawImage(ctx, images[loadableShape.shape], loadableShape.pos);
   }
 }
 
@@ -124,28 +130,34 @@ function drawLoadableShapes(ctx, images, loadableShapes) {
  * Draw the ground.
  * @param {CanvasRenderingContext2D} ctx
  * @param {Images} images
+ * @param {Vector2d} boardSize
+
  */
-function drawDirt(ctx, images) {
+function drawDirt(ctx, images, boardSize) {
   const dirts = [images.dirt1, images.dirt2, images.dirt3];
-  for (let x = 0; x < 15; x++) {
-    for (let y = 0; y < 15; y++) {
-      // draw a pseudo random dirt
-      const dirt = dirts[(x + y) % dirts.length];
-      ctx.drawImage(dirt, x * 32, y * 32);
-    }
-  }
+  boardSize.eachGrid((pos) => {
+    // draw a pseudo random dirt
+    const dirt = dirts[(pos.x + pos.y) % dirts.length];
+    drawImage(ctx, dirt, pos);
+  });
 }
 
 /**
-  * @param {number} time
-  * @param {CanvasRenderingContext2D} ctx
-  * @param {Images} images
-  * @param {State} state
-*/
+ * @param {number} time
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Images} images
+ * @param {State} state
+ */
 export function drawFrame(time, ctx, images, state) {
+  let { loader, truck, loadableShapes, boardSize } = state.getDrawables();
+  if (ctx.canvas.width !== boardSize.x * TILE_SIZE) {
+    ctx.canvas.width = boardSize.x * TILE_SIZE;
+  }
+  if (ctx.canvas.height !== boardSize.y * TILE_SIZE) {
+    ctx.canvas.height = boardSize.y * TILE_SIZE;
+  }
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  let { loader, truck, loadableShapes } = state.getDrawables();
-  drawDirt(ctx, images);
+  drawDirt(ctx, images, boardSize);
   drawLoadableShapes(ctx, images, loadableShapes);
   drawLoader(ctx, images, loader);
   drawTruck(time, ctx, images, truck);
