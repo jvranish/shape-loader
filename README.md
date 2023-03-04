@@ -10,4 +10,4 @@ You can find it [here](https://jvranish.github.io/shape-loader/).
 
 ## Have fun!
 
-<img width="480" alt="screenshot" src="https://github.com/jvranish/shape-loader/raw/3deff54a201a8e2a70b35b7260bce780043568b8/screenshot.png">
+<img width="480" alt="screenshot" src="./screenshot.png">
